@@ -17,24 +17,41 @@ package com.ibm.janusgraph.utils.importer;
 
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
+import org.janusgraph.core.schema.JanusGraphManagement;
 import com.ibm.janusgraph.utils.importer.dataloader.DataLoader;
 import com.ibm.janusgraph.utils.importer.schema.SchemaLoader;
+import java.util.Set;
 
 public class BatchImport {
 
-    public static void main(String args[]) throws Exception {
+	public static void main(String args[]) throws Exception {
 
-        if (null == args || args.length < 4) {
-            System.err.println(
-                    "Usage: BatchImport <janusgraph-config-file> <data-files-directory> <schema.json> <data-mapping.json> [skipSchema]");
-            System.exit(1);
-        }
+		if (null == args || args.length < 5) {
+			System.err.println(
+					"Usage: BatchImport <janusgraph-config-file> <schema-name> <data-files-directory> <schema.json> <data-mapping.json> [skipSchema]");
+			System.exit(1);
+		}
 
-        JanusGraph graph = JanusGraphFactory.open(args[0]);
-        if (!(args.length > 4 && args[4].equals("skipSchema")))
-            new SchemaLoader().loadSchema(graph, args[2]);
-        new DataLoader(graph).loadVertex(args[1], args[3]);
-        new DataLoader(graph).loadEdges(args[1], args[3]);
-        graph.close();
-    }
+		String schemaName = args[1];
+		JanusGraph graph = JanusGraphFactory.open(args[0]);
+		JanusGraphManagement mgmt = graph.openManagement();
+		Set<String> openInstances = mgmt.getOpenInstances();
+		for (String inst : openInstances) {
+			if (!inst.endsWith("(current)")) {
+				mgmt.forceCloseInstance(inst);
+			}
+		}
+		mgmt.set("index.search.index-name", schemaName);
+		mgmt.commit();
+		graph.close();
+		
+		//Does this retain the index-name?
+		graph = JanusGraphFactory.open(args[0]);
+
+		if (!(args.length > 5 && args[5].equals("skipSchema")))
+			new SchemaLoader().loadSchema(graph, args[3]);
+		new DataLoader(graph).loadVertex(args[2], args[4]);
+		new DataLoader(graph).loadEdges(args[2], args[4]);
+		graph.close();
+	}
 }

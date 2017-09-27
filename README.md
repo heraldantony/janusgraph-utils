@@ -1,3 +1,16 @@
+#Note for this fork
+* add graph name, to handle loading the data into a different keyspace/schema in Cassandra
+and to use the graph name as index in ElasticSearch
+* import and load schema commands have an extra argument, the graph/schema name
+* in your janusgraph-cassandra-es-server.properties  make sure to
+    have the following 2 key values set, where "tweets" is the schema name
+       storage.cassandra.keyspace=tweets
+       index.search.index-name=tweets
+* Everytime you import schema/data, make sure to delete the schema from Cassandra and indices from ElasticSearch
+      Use cqlsh to "drop schema tweets;"
+      And Kibana to "DELETE tweets"
+* Check this link for ElasticSearch index name - https://groups.google.com/forum/#!topic/janusgraph-users/JtJ0JONIyck
+       
 # Develop a scalable graph database app using JanusGraph [![Build Status](https://travis-ci.org/IBM/janusgraph-utils.svg?branch=master)](https://travis-ci.org/IBM/janusgraph-utils)
 
 This journey contains sample data and code for running a Twitter-like application in JanusGraph. The utility code illustrates how to use OLTP APIs to define schema, ingest data, and query graph. Developers can use or modify the code to build and operate their custom graph applications, or create similar java and groovy files to interact with JanusGraph.
@@ -102,7 +115,7 @@ doc [doc/users_guide.md](doc/users_guide.md) for details. Alternatively, just ru
 load schema and import data.
 ```
 export JANUSGRAPH_HOME=~/janusgraph
-./run.sh import ~/janusgraph/conf/janusgraph-cql-es.properties /tmp /tmp/schema.json /tmp/datamapper.json
+./run.sh import ~/janusgraph/conf/janusgraph-cql-es.properties tweets /tmp /tmp/schema.json /tmp/datamapper.json
 ```
 
 ### 5. Run interactive remote queries

@@ -44,20 +44,27 @@ else
     echo "JanusGraph lib path is set to $JANUSGRAPH_HOME/lib"
 fi
 
-CP="${sDir}/lib/commons-csv-1.4.jar:${sDir}/conf:${JANUSGRAPH_HOME}/lib/*"
+CP="${sDir}/lib/commons-csv-1.4.jar:${sDir}/lib/javafaker-0.13.jar:${sDir}/conf:${JANUSGRAPH_HOME}/lib/*"
 class=$1
+# Special-case path variables.
+case "`uname`" in
+    CYGWIN*) CP="`echo $CP:${utilityJar} | cygpath --windows --path -f -`" ;;
+esac
+
 case $class in
     gencsv)
         shift
-        java -cp "$CP":"${utilityJar}" com.ibm.janusgraph.utils.generator.JanusGraphBench "$@"
+        echo java -cp "$CP" com.ibm.janusgraph.utils.generator.JanusGraphBench "$@"
+        java -cp "$CP" com.ibm.janusgraph.utils.generator.JanusGraphBench "$@"
         ;;
     import)
         shift
-        java -cp "$CP":"${utilityJar}" com.ibm.janusgraph.utils.importer.BatchImport "$@"
+        echo java -cp "$CP" com.ibm.janusgraph.utils.importer.BatchImport "$@"
+        java -cp "$CP" com.ibm.janusgraph.utils.importer.BatchImport "$@"
         ;;
     loadsch)
         shift
-        java -cp "$CP":"${utilityJar}" com.ibm.janusgraph.utils.importer.schema.SchemaLoader "$@"
+        java -cp "$CP" com.ibm.janusgraph.utils.importer.schema.SchemaLoader "$@"
         ;;
     *)
         usage      # unknown option

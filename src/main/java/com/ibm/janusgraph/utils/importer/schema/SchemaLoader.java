@@ -18,38 +18,51 @@ package com.ibm.janusgraph.utils.importer.schema;
 import com.ibm.janusgraph.utils.schema.JanusGraphSONSchema;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
+import org.janusgraph.core.schema.JanusGraphManagement;
+import java.util.Set;
 
 public class SchemaLoader {
 
-    public SchemaLoader() {
-    }
+	public SchemaLoader() {
+	}
 
-    public void loadSchema(JanusGraph g, String schemaFile) throws Exception {
-        JanusGraphSONSchema importer = new JanusGraphSONSchema(g);
-        importer.readFile(schemaFile);
-    }
+	public void loadSchema(JanusGraph g, String schemaFile) throws Exception {
+		JanusGraphSONSchema importer = new JanusGraphSONSchema(g);
+		importer.readFile(schemaFile);
+	}
 
-    public static void main(String[] args) {
+	public static void main(String[] args) {
 
-        if (null == args || args.length < 2) {
-            System.err.println("Usage: SchemaLoader <janusgraph-config-file> <schema-file>");
-            System.exit(1);
-        }
+		if (null == args || args.length < 3) {
+			System.err.println("Usage: SchemaLoader <schema-name> <janusgraph-config-file> <schema-file>");
+			System.exit(1);
+		}
 
-        String configFile = args[0];
-        String schemaFile = args[1];
+		String schemaName = args[0];
+		String configFile = args[1];
+		String schemaFile = args[2];
 
-        // use custom or default config file to get JanusGraph
-        JanusGraph g = JanusGraphFactory.open(configFile);
+		// use custom or default config file to get JanusGraph
+		JanusGraph g = JanusGraphFactory.open(configFile);
+		JanusGraphManagement mgmt = g.openManagement();
+		Set<String> openInstances = mgmt.getOpenInstances();
+		for (String inst : openInstances) {
+			if (!inst.endsWith("(current)")) {
+				mgmt.forceCloseInstance(inst);
+			}
+		}
+		mgmt.set("index.search.index-name", schemaName);
+		mgmt.commit();
+		g.close();
+		g = JanusGraphFactory.open(configFile);
+		try {
+			new SchemaLoader().loadSchema(g, schemaFile);
+		} catch (Exception e) {
+			System.out.println("Failed to import schema due to " + e.getMessage());
+		} finally {
+			g.close();
+		}
 
-        try {
-            new SchemaLoader().loadSchema(g, schemaFile);
-        } catch (Exception e) {
-            System.out.println("Failed to import schema due to " + e.getMessage());
-        } finally {
-            g.close();
-        }
-
-    }
+	}
 
 }
